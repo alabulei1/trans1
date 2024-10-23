@@ -1,0 +1,43 @@
+{
+    "update_id": 394362210,
+    "message": {
+        "message_id": 6,
+        "from": {
+            "id": 2142063265,
+            "is_bot": false,
+            "first_name": "Jay",
+            "last_name": "Chen",
+            "language_code": "en"
+        },
+        "chat": {
+            "id": 2142063265,
+            "first_name": "Jay",
+            "last_name": "Chen",
+            "type": "private"
+        },
+        "date": 1729558723,
+        "video": {
+            "duration": 3,
+            "width": 720,
+            "height": 1280,
+            "mime_type": "video/mp4",
+            "thumbnail": {
+                "file_id": "AAMCAQADGQEAAwZnFvjCJao0yWl93SEjhRWoy3xySwACbQQAAo2AuURuJF_V0A1XDAEAB20AAzYE",
+                "file_unique_id": "AQADbQQAAo2AuURy",
+                "file_size": 7956,
+                "width": 180,
+                "height": 320
+            },
+            "thumb": {
+                "file_id": "AAMCAQADGQEAAwZnFvjCJao0yWl93SEjhRWoy3xySwACbQQAAo2AuURuJF_V0A1XDAEAB20AAzYE",
+                "file_unique_id": "AQADbQQAAo2AuURy",
+                "file_size": 7956,
+                "width": 180,
+                "height": 320
+            },
+            "file_id": "BAACAgEAAxkBAAMGZxb4wiWqNMlpfd0hI4UVqMt8cksAAm0EAAKNgLlEbiRf1dANVww2BA",
+            "file_unique_id": "AgADbQQAAo2AuUQ",
+            "file_size": 871178
+        }
+    }
+}
