@@ -21,7 +21,7 @@ async fn handler(update: Update) {
 
     logger::init();
     let telegram_token = env::var("telegram_token").unwrap();
-    // let tele = Telegram::new(telegram_token.clone());
+    let tele = Telegram::new(telegram_token.clone());
 
     // if let UpdateKind::Message(msg) = update.kind {
     //     let chat_id = msg.chat.id;
@@ -34,35 +34,39 @@ async fn handler(update: Update) {
     //         }
     //     }
 
-    let _ = inner(update, &telegram_token).await;
-}
-
-pub async fn inner(update: Update, telegram_token: &str) -> anyhow::Result<()> {
     match update.kind {
         UpdateKind::ChannelPost(msg) => {
-            let _chat_id = msg.chat.id;
-            log::info!("channel post msg: {}", _chat_id);
+            let chat_id = msg.chat.id;
+            log::info!("channel post msg: {}", chat_id);
 
+            if let Some(t) = msg.text() {
+                log::info!("echoing msg text: {}", t);
+            }
             if let Some(_) = msg.video() {
                 let video_file_id = msg.video().unwrap().file.id.clone();
                 log::info!("video file id: {}", video_file_id.clone());
                 let _ = download_video_data_and_(&telegram_token, &video_file_id).await;
             }
+
+            let _ = tele.send_message(chat_id, "received msg in channel".to_string());
         }
 
         UpdateKind::Message(msg) => {
-            let _chat_id = msg.chat.id;
-            log::info!("channel post msg: {}", _chat_id);
+            let chat_id = msg.chat.id;
+            log::info!("channel post msg: {}", chat_id);
+            if let Some(t) = msg.text() {
+                log::info!("echoing msg text: {}", t);
+            }
+
             if let Some(_) = msg.video() {
                 let video_file_id = msg.video().unwrap().file.id.clone();
                 log::info!("video file id: {}", video_file_id.clone());
                 let _ = download_video_data_and_(&telegram_token, &video_file_id).await;
             }
+            let _ = tele.send_message(chat_id, "received msg".to_string());
         }
         _ => unreachable!(),
     }
-
-    Ok(())
 }
 
 pub async fn download_video_data_and_(
@@ -94,14 +98,17 @@ pub async fn download_video_data_and_(
         .method(Method::GET)
         .send(&mut file_data)?;
 
-        log::info!("video file downloaded, sized: {}", file_data.len());
-    
+    log::info!("video file downloaded, sized: {}", file_data.len());
+
     let _ = upload_video_to_gaianet(&file_data).await;
 
     Ok(())
 }
 
-pub async fn upload_video_to_gaianet_no_soundid(file_data: &[u8], video_name: &str) -> anyhow::Result<()> {
+pub async fn upload_video_to_gaianet_no_soundid(
+    file_data: &[u8],
+    video_name: &str,
+) -> anyhow::Result<()> {
     use rand::{distributions::Alphanumeric, Rng}; // Import the required traits
 
     let boundary: String = rand::thread_rng()
