@@ -96,7 +96,7 @@ pub async fn download_video_data_and_(
 
         log::info!("video file downloaded, sized: {}", file_data.len());
     
-    let _ = upload_video_to_gaianet_no_soundid(&file_data, file_path).await;
+    let _ = upload_video_to_gaianet(&file_data).await;
 
     Ok(())
 }
@@ -116,7 +116,6 @@ pub async fn upload_video_to_gaianet_no_soundid(file_data: &[u8], video_name: &s
     let fields = [
         ("file", video_name),
         ("email_link", "jaykchen@gmail.com"),
-        ("resultType", "0"),
         ("language", "zh"),
     ];
 
@@ -170,7 +169,8 @@ pub async fn upload_video_to_gaianet(file_data: &[u8]) -> anyhow::Result<()> {
     let mut body = Vec::new();
 
     let fields = [
-        ("email_link", "vivian@secondstate.io"),
+        ("email_link", "jaykchen@gmail.com"),
+        ("resultType", "0"),
         ("soundId", "59cb5986671546eaa6ca8ae6f29f6d22"),
         ("language", "zh"),
     ];
