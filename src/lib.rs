@@ -1,5 +1,6 @@
 use dotenv::dotenv;
 use flowsnet_platform_sdk::logger;
+use form_urlencoded;
 use http_req::{
     request::{Method, Request},
     uri::Uri,
@@ -7,7 +8,6 @@ use http_req::{
 use serde_json::Value;
 use std::env;
 use tg_flows::{listen_to_update, update_handler, Telegram, Update, UpdateKind};
-use form_urlencoded;
 
 #[no_mangle]
 #[tokio::main(flavor = "current_thread")]
@@ -22,7 +22,7 @@ async fn handler(update: Update) {
 
     logger::init();
     let telegram_token = env::var("telegram_token").unwrap();
-    // let tele = Telegram::new(telegram_token.clone());
+    let tele = Telegram::new(telegram_token.clone());
 
     match update.kind {
         UpdateKind::ChannelPost(msg) => {
@@ -41,10 +41,12 @@ async fn handler(update: Update) {
                     .expect("failed to get video file path");
 
                 log::info!("video file path: {}", video_file_path.clone());
-                let _ = upload_video_to_gaianet_by_url(&telegram_token, &video_file_path).await;
+                let res = upload_video_to_gaianet_by_url(&video_file_path, "jaykchen@gmail.com")
+                    .await
+                    .expect("upload failed")
+                    .to_string();
+                let _ = tele.send_message(chat_id, &res);
             }
-
-            // let _ = tele.send_message(chat_id, "received msg in channel".to_string());
         }
 
         UpdateKind::Message(msg) => {
@@ -57,9 +59,12 @@ async fn handler(update: Update) {
             if let Some(_) = msg.video() {
                 let video_file_path = msg.video().unwrap().file.id.clone();
                 log::info!("video file id: {}", video_file_path.clone());
-                let _ = upload_video_to_gaianet_by_url(&telegram_token, &video_file_path).await;
+                let res = upload_video_to_gaianet_by_url(&video_file_path, "jaykchen@gmail.com")
+                    .await
+                    .expect("upload failed")
+                    .to_string();
+                let _ = tele.send_message(chat_id, &res);
             }
-            // let _ = tele.send_message(chat_id, "received msg".to_string());
         }
         _ => unreachable!(),
     }
@@ -94,8 +99,7 @@ pub async fn get_video_file_path(
 pub async fn upload_video_to_gaianet_by_url(
     video_file_path: &str,
     email: &str,
-) -> anyhow::Result<()> {
-    // Construct the form data
+) -> anyhow::Result<String> {
     let form_data = form_urlencoded::Serializer::new(String::new())
         .append_pair("url", video_file_path)
         .append_pair("email_link", email)
@@ -104,13 +108,10 @@ pub async fn upload_video_to_gaianet_by_url(
         .append_pair("language", "zh")
         .finish();
 
-    // Convert form data to bytes
     let body_bytes = form_data.as_bytes();
 
-    // Parse the URI
     let uri = Uri::try_from("https://video-translator.gaianet.ai/runCodeByUrl")?;
 
-    // Create the POST request
     let mut request = Request::new(&uri);
     request
         .method(Method::POST)
@@ -118,16 +119,14 @@ pub async fn upload_video_to_gaianet_by_url(
         .header("Content-Length", &body_bytes.len().to_string())
         .body(body_bytes);
 
-    // Container for the response body
     let mut writer = Vec::new();
 
-    // Send the request
     let response = request.send(&mut writer).map_err(|e| anyhow::anyhow!(e))?;
 
-    // Handle the response
     println!("Status: {} {}", response.status_code(), response.reason());
     println!("Headers: {}", response.headers());
-    println!("Response: {}", String::from_utf8_lossy(&writer));
+    let res = String::from_utf8_lossy(&writer).to_string();
+    println!("Response: {}", res);
 
-    Ok(())
+    Ok(res)
 }
