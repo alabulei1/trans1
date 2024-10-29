@@ -5,6 +5,7 @@ use http_req::{
     request::{Method, Request},
     uri::Uri,
 };
+use serde::Deserialize;
 use serde_json::Value;
 use std::env;
 use tg_flows::{listen_to_update, update_handler, Telegram, Update, UpdateKind};
@@ -85,11 +86,14 @@ pub async fn get_video_file_path(
         .method(Method::GET)
         .send(&mut file_response)?;
 
-    let file_info: Value = serde_json::from_slice(&file_response)?;
-    let file_path = file_info["result"]["file_path"]
-        .as_str()
-        .ok_or("file_path missing")?
-        .to_string();
+    #[derive(Deserialize)]
+    struct Payload {
+        file_id: String,
+        file_path: String,
+    }
+
+    let load: Payload = serde_json::from_slice(&file_response)?;
+    let file_path = load.file_path.to_string();
 
     let path = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
 
