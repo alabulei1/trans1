@@ -723,6 +723,7 @@ dependencies = [
  "anyhow",
  "dotenv",
  "flowsnet-platform-sdk",
+ "form_urlencoded",
  "http_req_wasi",
  "log",
  "serde",
@@ -816,6 +817,18 @@ checksum = "145f3413504347a2be84393cc8a7d2fb4d863b375909ea59f2158261aa258bbb"
 dependencies = [
  "backtrace",
  "pin-project-lite",
+ "tokio-macros",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "2.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "693d596312e88961bc67d7f1f97af8a70227d9f90c31bba5806eec004978d752"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.85",
 ]
 
 [[package]]
@@ -1038,3 +1051,23 @@ name = "windows_x86_64_msvc"
 version = "0.52.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "589f6da84c646204747d1270a2a5661ea66ed1cced2631d546fdfb155959f9ec"
+
+[[patch.unused]]
+name = "hyper"
+version = "0.14.28"
+source = "git+https://github.com/second-state/wasi_hyper.git?branch=v0.14.x#107f168a16e27739cfbdc5322ad8aadf844c7682"
+
+[[patch.unused]]
+name = "reqwest"
+version = "0.11.27"
+source = "git+https://github.com/second-state/wasi_reqwest.git?branch=0.11.x#59d5b973d955d1c4d86eaabe58c4cbdb0f4cb548"
+
+[[patch.unused]]
+name = "socket2"
+version = "0.5.7"
+source = "git+https://github.com/second-state/socket2.git?branch=v0.5.x#450d51df5a1e885694f138a9036530e83ae934d0"
+
+[[patch.unused]]
+name = "tokio"
+version = "1.36.0"
+source = "git+https://github.com/second-state/wasi_tokio.git?branch=v1.36.x#d8c24c05bbb171a74a9b6761eab8b8615fdb3d5d"

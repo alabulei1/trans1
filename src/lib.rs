@@ -7,6 +7,7 @@ use http_req::{
 use serde_json::Value;
 use std::env;
 use tg_flows::{listen_to_update, update_handler, Telegram, Update, UpdateKind};
+use form_urlencoded;
 
 #[no_mangle]
 #[tokio::main(flavor = "current_thread")]
