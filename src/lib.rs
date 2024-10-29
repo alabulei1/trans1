@@ -119,6 +119,9 @@ pub async fn get_video_file_path(
         .method(Method::GET)
         .send(&mut file_response)?;
 
+    let test = String::from_utf8_lossy(&file_response);
+    log::info!("do I get file path payload: {:?}", test);
+
     #[derive(Deserialize)]
     struct Payload {
         file_id: String,
