@@ -726,6 +726,7 @@ dependencies = [
  "form_urlencoded",
  "http_req_wasi",
  "log",
+ "percent-encoding",
  "serde",
  "serde_json",
  "tg-flows",

@@ -6,7 +6,6 @@ use http_req::{
     uri::Uri,
 };
 use serde::Deserialize;
-use serde_json::Value;
 use std::env;
 use tg_flows::{listen_to_update, update_handler, Telegram, Update, UpdateKind};
 
@@ -71,15 +70,49 @@ async fn handler(update: Update) {
     }
 }
 
+// pub async fn get_video_file_path(
+//     token: &str,
+//     file_id: &str,
+// ) -> Result<String, Box<dyn std::error::Error>> {
+//     let file_url = format!(
+//         "https://api.telegram.org/bot{}/getFile?file_id={}",
+//         token, file_id
+//     );
+//     let file_uri: Uri = Uri::try_from(file_url.as_str()).unwrap();
+
+//     let mut file_response = Vec::new();
+//     Request::new(&file_uri)
+//         .method(Method::GET)
+//         .send(&mut file_response)?;
+
+//     #[derive(Deserialize)]
+//     struct Payload {
+//         file_id: String,
+//         file_path: String,
+//     }
+
+//     let load: Payload = serde_json::from_slice(&file_response)?;
+//     let file_path = load.file_path.to_string();
+
+//     let path = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
+
+//     Ok(path)
+// }
+
+use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+
 pub async fn get_video_file_path(
     token: &str,
     file_id: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
+    let encoded_token = utf8_percent_encode(token, NON_ALPHANUMERIC).to_string();
+    let encoded_file_id = utf8_percent_encode(file_id, NON_ALPHANUMERIC).to_string();
+
     let file_url = format!(
         "https://api.telegram.org/bot{}/getFile?file_id={}",
-        token, file_id
+        encoded_token, encoded_file_id
     );
-    let file_uri: Uri = Uri::try_from(file_url.as_str()).unwrap();
+    let file_uri: Uri = Uri::try_from(file_url.as_str())?;
 
     let mut file_response = Vec::new();
     Request::new(&file_uri)
@@ -95,7 +128,11 @@ pub async fn get_video_file_path(
     let load: Payload = serde_json::from_slice(&file_response)?;
     let file_path = load.file_path.to_string();
 
-    let path = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
+    let encoded_file_path = utf8_percent_encode(&file_path, NON_ALPHANUMERIC).to_string();
+    let path = format!(
+        "https://api.telegram.org/file/bot{}/{}",
+        encoded_token, encoded_file_path
+    );
 
     Ok(path)
 }
