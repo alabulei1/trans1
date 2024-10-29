@@ -21,18 +21,7 @@ async fn handler(update: Update) {
 
     logger::init();
     let telegram_token = env::var("telegram_token").unwrap();
-    let tele = Telegram::new(telegram_token.clone());
-
-    // if let UpdateKind::Message(msg) = update.kind {
-    //     let chat_id = msg.chat.id;
-
-    //     if let Some(text) = msg.text() {
-    //         if text == "/start" {
-    //             let init_message = "Hello! I am your medical lab report analyzer bot. Zoom in on where you need assistance with, take a photo and upload it as a file, or paste the photo in the chatbox to send me if you think it's clear enough.";
-    //             let _ = tele.send_message(chat_id, init_message.to_string());
-    //             return;
-    //         }
-    //     }
+    // let tele = Telegram::new(telegram_token.clone());
 
     match update.kind {
         UpdateKind::ChannelPost(msg) => {
@@ -44,11 +33,17 @@ async fn handler(update: Update) {
             }
             if let Some(_) = msg.video() {
                 let video_file_id = msg.video().unwrap().file.id.clone();
+
                 log::info!("video file id: {}", video_file_id.clone());
-                let _ = download_video_data_and_(&telegram_token, &video_file_id).await;
+                let video_file_path = get_video_file_path(&telegram_token, &video_file_id)
+                    .await
+                    .expect("failed to get video file path");
+
+                log::info!("video file path: {}", video_file_path.clone());
+                let _ = upload_video_to_gaianet_by_url(&telegram_token, &video_file_path).await;
             }
 
-            let _ = tele.send_message(chat_id, "received msg in channel".to_string());
+            // let _ = tele.send_message(chat_id, "received msg in channel".to_string());
         }
 
         UpdateKind::Message(msg) => {
@@ -59,20 +54,20 @@ async fn handler(update: Update) {
             }
 
             if let Some(_) = msg.video() {
-                let video_file_id = msg.video().unwrap().file.id.clone();
-                log::info!("video file id: {}", video_file_id.clone());
-                let _ = download_video_data_and_(&telegram_token, &video_file_id).await;
+                let video_file_path = msg.video().unwrap().file.id.clone();
+                log::info!("video file id: {}", video_file_path.clone());
+                let _ = upload_video_to_gaianet_by_url(&telegram_token, &video_file_path).await;
             }
-            let _ = tele.send_message(chat_id, "received msg".to_string());
+            // let _ = tele.send_message(chat_id, "received msg".to_string());
         }
         _ => unreachable!(),
     }
 }
 
-pub async fn download_video_data_and_(
+pub async fn get_video_file_path(
     token: &str,
     file_id: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     let file_url = format!(
         "https://api.telegram.org/bot{}/getFile?file_id={}",
         token, file_id
@@ -87,134 +82,51 @@ pub async fn download_video_data_and_(
     let file_info: Value = serde_json::from_slice(&file_response)?;
     let file_path = file_info["result"]["file_path"]
         .as_str()
-        .ok_or("file_path missing")?;
+        .ok_or("file_path missing")?
+        .to_string();
 
-    // Download the file using the file path
-    let file_download_url = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
-    let file_download_uri: Uri = Uri::try_from(file_download_url.as_str()).unwrap();
+    let path = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
 
-    let mut file_data = Vec::new();
-    Request::new(&file_download_uri)
-        .method(Method::GET)
-        .send(&mut file_data)?;
-
-    log::info!("video file downloaded, sized: {}", file_data.len());
-
-    let _ = upload_video_to_gaianet(&file_data).await;
-
-    Ok(())
+    Ok(path)
 }
 
-pub async fn upload_video_to_gaianet_no_soundid(
-    file_data: &[u8],
-    video_name: &str,
+pub async fn upload_video_to_gaianet_by_url(
+    video_file_path: &str,
+    email: &str,
 ) -> anyhow::Result<()> {
-    use rand::{distributions::Alphanumeric, Rng}; // Import the required traits
+    // Construct the form data
+    let form_data = form_urlencoded::Serializer::new(String::new())
+        .append_pair("url", video_file_path)
+        .append_pair("email_link", email)
+        .append_pair("resultType", "1")
+        .append_pair("soundId", "59cb5986671546eaa6ca8ae6f29f6d22")
+        .append_pair("language", "zh")
+        .finish();
 
-    let boundary: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(30)
-        .map(char::from)
-        .collect();
+    // Convert form data to bytes
+    let body_bytes = form_data.as_bytes();
 
-    let upload_video_base_url = "https://video-translator.gaianet.ai/upload";
-    let mut body = Vec::new();
+    // Parse the URI
+    let uri = Uri::try_from("https://video-translator.gaianet.ai/runCodeByUrl")?;
 
-    let fields = [
-        ("file", video_name),
-        ("email_link", "jaykchen@gmail.com"),
-        ("language", "zh"),
-    ];
+    // Create the POST request
+    let mut request = Request::new(&uri);
+    request
+        .method(Method::POST)
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .header("Content-Length", &body_bytes.len().to_string())
+        .body(body_bytes);
 
-    for (name, value) in fields.iter() {
-        body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        body.extend_from_slice(
-            format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", name).as_bytes(),
-        );
-        body.extend_from_slice(value.as_bytes());
-        body.extend_from_slice(b"\r\n");
-    }
-
-    body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-    body.extend_from_slice(
-        b"Content-Disposition: form-data; name=\"file\"; filename=\"video.mp4\"\r\n",
-    );
-    body.extend_from_slice(b"Content-Type: video/mp4\r\n\r\n");
-    body.extend_from_slice(file_data);
-    body.extend_from_slice(b"\r\n");
-
-    body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
-
-    let content_type = format!("multipart/form-data; boundary={}", boundary);
-
+    // Container for the response body
     let mut writer = Vec::new();
 
-    let uri: Uri = Uri::try_from(upload_video_base_url).unwrap();
+    // Send the request
+    let response = request.send(&mut writer).map_err(|e| anyhow::anyhow!(e))?;
 
-    let response = Request::new(&uri)
-        .method(Method::POST)
-        .header("Content-Type", &content_type)
-        .body(&body)
-        .send(&mut writer)?;
-
-    log::info!("Status: {}", response.status_code());
-    log::info!("Response: {}", String::from_utf8_lossy(&writer));
-
-    Ok(())
-}
-
-pub async fn upload_video_to_gaianet(file_data: &[u8]) -> anyhow::Result<()> {
-    use rand::{distributions::Alphanumeric, Rng}; // Import the required traits
-
-    let boundary: String = rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(30)
-        .map(char::from)
-        .collect();
-
-    let upload_video_base_url = "https://video-translator.gaianet.ai/runCodeByUrl";
-    let mut body = Vec::new();
-
-    let fields = [
-        ("email_link", "jaykchen@gmail.com"),
-        ("resultType", "0"),
-        ("soundId", "59cb5986671546eaa6ca8ae6f29f6d22"),
-        ("language", "zh"),
-    ];
-
-    for (name, value) in fields.iter() {
-        body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-        body.extend_from_slice(
-            format!("Content-Disposition: form-data; name=\"{}\"\r\n\r\n", name).as_bytes(),
-        );
-        body.extend_from_slice(value.as_bytes());
-        body.extend_from_slice(b"\r\n");
-    }
-
-    body.extend_from_slice(format!("--{}\r\n", boundary).as_bytes());
-    body.extend_from_slice(
-        b"Content-Disposition: form-data; name=\"file\"; filename=\"video.mp4\"\r\n",
-    );
-    body.extend_from_slice(b"Content-Type: video/mp4\r\n\r\n");
-    body.extend_from_slice(file_data);
-    body.extend_from_slice(b"\r\n");
-
-    body.extend_from_slice(format!("--{}--\r\n", boundary).as_bytes());
-
-    let content_type = format!("multipart/form-data; boundary={}", boundary);
-
-    let mut writer = Vec::new();
-
-    let uri: Uri = Uri::try_from(upload_video_base_url).unwrap();
-
-    let response = Request::new(&uri)
-        .method(Method::POST)
-        .header("Content-Type", &content_type)
-        .body(&body)
-        .send(&mut writer)?;
-
-    log::info!("Status: {}", response.status_code());
-    log::info!("Response: {}", String::from_utf8_lossy(&writer));
+    // Handle the response
+    println!("Status: {} {}", response.status_code(), response.reason());
+    println!("Headers: {}", response.headers());
+    println!("Response: {}", String::from_utf8_lossy(&writer));
 
     Ok(())
 }

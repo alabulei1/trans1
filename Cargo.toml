@@ -8,28 +8,16 @@ edition = "2021"
 path = "src/lib.rs"
 crate-type = ["cdylib"]
 
-[patch.crates-io]
-tokio = { git = "https://github.com/second-state/wasi_tokio.git", branch = "v1.36.x" }
-socket2 = { git = "https://github.com/second-state/socket2.git", branch = "v0.5.x" }
-hyper = { git = "https://github.com/second-state/wasi_hyper.git", branch = "v0.14.x" }
-reqwest = { git = "https://github.com/second-state/wasi_reqwest.git", branch = "0.11.x" }
 
 
 [dependencies]
-base64 = "0.21.0"
-cloud-vision-flows = "0.1.1"
-flowsnet-platform-sdk = "0.1.6"
-http_req_wasi = "0.10.2"
-image = "0.24.6"
-lambda-flows = "0.2.2"
-openai-flows = "0.4.5"
-tg-flows = "0.3.2"
-url = "2.3.1"
-serde_json = "1.0"
 dotenv = "0.15.0"
 log = "0.4"
 anyhow = "1"
-tokio = { version = "1", features = ["rt", "macros", "net", "time"] }
-rand = "0.8.5"
-# reqwest = {version= "0.11.x", features= ["json", "stream"]}
- 
+flowsnet-platform-sdk = "0.1.2"
+http_req_wasi = "0.10.2"
+serde = { version = "1.0.157", features = ["derive"] }
+serde_json = "1.0.94"
+tokio = { version = "1.12.0" }
+url = { version = "2.3.1", features = ["serde"] }
+tg-flows = "0.3.2"
