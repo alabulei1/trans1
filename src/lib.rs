@@ -37,12 +37,12 @@ async fn handler(update: Update) {
 
                 log::info!("video file id: {}", video_file_id.clone());
                 let video_file_path = get_video_file_path(&telegram_token, &video_file_id)
-                    .await
+                    
                     .expect("failed to get video file path");
 
                 log::info!("video file path: {}", video_file_path.clone());
                 let res = upload_video_to_gaianet_by_url(&video_file_path, "jaykchen@gmail.com")
-                    .await
+                    
                     .expect("upload failed")
                     .to_string();
                 let _ = tele.send_message(chat_id, &res);
@@ -60,7 +60,7 @@ async fn handler(update: Update) {
                 let video_file_path = msg.video().unwrap().file.id.clone();
                 log::info!("video file id: {}", video_file_path.clone());
                 let res = upload_video_to_gaianet_by_url(&video_file_path, "jaykchen@gmail.com")
-                    .await
+                    
                     .expect("upload failed")
                     .to_string();
                 let _ = tele.send_message(chat_id, &res);
@@ -69,8 +69,62 @@ async fn handler(update: Update) {
         _ => unreachable!(),
     }
 }
+// use reqwest::Client;
+// use serde::Deserialize;
+// use std::error::Error;
 
-pub async fn get_video_file_path(
+// pub async fn get_video_file_path(
+//     token: &str,
+//     file_id: &str,
+// ) -> Result<String, Box<dyn Error>> {
+//     let file_url = format!(
+//         "https://api.telegram.org/bot{}/getFile?file_id={}",
+//         token, file_id
+//     );
+
+//     let client = Client::new();
+
+//     // Send the GET request asynchronously
+//     let response = client.get(&file_url)
+//         .send()
+//         .await?;
+
+//     // Check for HTTP errors
+//     if !response.status().is_success() {
+//         let status = response.status();
+//         let text = response.text().await.unwrap_or_default();
+//         log::error!("Failed to get file. Status: {}, Response: {}", status, text);
+//         return Err(format!("Telegram API request failed with status {}", status).into());
+//     }
+
+//     // Get the response body as a string
+//     let body = response.text().await?;
+//     log::info!("Response payload: {:?}", body);
+
+//     // Define the structs for deserialization
+//     #[derive(Deserialize)]
+//     struct ApiResponse {
+//         ok: bool,
+//         #[serde(rename = "result")]
+//         inner: Inner,
+//     }
+
+//     #[derive(Deserialize)]
+//     struct Inner {
+//         file_path: String,
+//     }
+
+//     // Deserialize the response
+//     let load: ApiResponse = serde_json::from_str(&body)?;
+
+//     // Construct the file path URL
+//     let file_path = load.inner.file_path;
+//     let path = format!("https://api.telegram.org/file/bot{}/{}", token, file_path);
+
+//     Ok(path)
+// }
+
+pub fn get_video_file_path(
     token: &str,
     file_id: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -114,7 +168,7 @@ pub async fn get_video_file_path(
     Ok(path)
 }
 
-pub async fn upload_video_to_gaianet_by_url(
+pub fn upload_video_to_gaianet_by_url(
     video_file_path: &str,
     email: &str,
 ) -> anyhow::Result<String> {
