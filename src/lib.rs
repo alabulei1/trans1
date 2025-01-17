@@ -140,7 +140,7 @@ pub fn upload_video_to_gaianet_by_url(
 
     let body_bytes = form_data.as_bytes();
 
-    let uri = Uri::try_from("https://video-translator.gaianet.ai/runCodeByUrl")?;
+    let uri = Uri::try_from("https://videolangua.com /runCodeByUrl")?;
 
     let mut request = Request::new(&uri);
     request
