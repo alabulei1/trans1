@@ -14,7 +14,7 @@ use tg_flows::{listen_to_update, update_handler, Telegram, Update, UpdateKind};
 #[no_mangle]
 #[tokio::main(flavor = "current_thread")]
 pub async fn on_deploy() {
-    let telegram_token = std::env::var("telegram_token").expect("Failed to retrieve telegram_token environment variable");
+    let telegram_token = std::env::var("telegram_token").unwrap();
     listen_to_update(telegram_token).await;
 }
 
